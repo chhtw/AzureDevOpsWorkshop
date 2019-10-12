@@ -1,0 +1,87 @@
+#VM info
+myResourceGroup=workshop-devops-agents-windows
+rslocation=westus
+sourceAddressPrefixes="10.10.10.10/32 10.10.20.20/32"
+adminUserName=devopsadmin
+adminPassword=6RloAmtLvBs2
+#VM
+myVMName=myDevOpsVMWin01
+myNicName="$myVMName"Nic
+myPublicIPName="$myVMName"PublicIP
+
+#VNET
+myVnetName="$myResourceGroup"
+myVnetAddressPrefix1=192.168.0.0/16
+myVnetSubName=mySubName1
+myVnetSubprefix=192.168.1.0/24
+myNSGName=NSG-"$myResourceGroup"
+
+#DevOps info
+VSTSAccountName=https://dev.azure.com/<yourr orgniaztion>
+TeamProject=<your TeamProject name>
+DeploymentGroup=<your DeploymentGroup name>
+AgentName=$myVMName-$RANDOM
+Token=<your Personal Access Token >
+Tags=ab,cd
+
+#RG
+az group create --name $myResourceGroup --location $rslocation
+
+#VNET
+az network vnet create                      \
+   --resource-group $myResourceGroup        \
+   --name $myVnetName                       \
+   --address-prefix $myVnetAddressPrefix1   \
+   --subnet-name $myVnetSubName             \
+   --subnet-prefix $myVnetSubprefix
+
+
+#NSG 
+az network nsg create  --resource-group $myResourceGroup  --name $myNSGName
+az network nsg rule create                           \
+   --resource-group $myResourceGroup                 \
+   --nsg-name $myNSGName  --name NSGRuleSSH          \
+   --protocol tcp  --priority 1000                   \
+   --destination-port-range 22                       \
+   --source-address-prefixes $sourceAddressPrefixes  \
+   --access allow
+
+az network nsg show --resource-group $myResourceGroup --name $myNSGName
+
+#IP
+az network public-ip create                     \
+   --resource-group $myResourceGroup            \
+   --name $myPublicIPName                       \
+   --location $rslocation
+
+#NIC
+az network nic create                           \
+   --resource-group $myResourceGroup            \
+   --name $myNicName                            \
+   --vnet-name $myVnetName                      \
+   --subnet $myVnetSubName                      \
+   --public-ip-address $myPublicIPName          \
+   --network-security-group $myNSGName          \
+   --location $rslocation                       \
+   #--accelerated-networking true
+	
+az vm create                                    \
+   --resource-group $myResourceGroup            \
+   --name $myVMName                             \
+   --location $rslocation                       \
+   --nics $myNicName                            \
+   --image win2016datacenter                    \
+   --admin-username $adminUserName              \
+   --admin-password $adminPassword              \
+   --size Standard_D4_v3
+
+
+az vm extension set -n TeamServicesAgent                     \
+   --publisher Microsoft.VisualStudio.Services               \
+   --resource-group $myResourceGroup                         \
+   --vm-name  $myVMName                                      \
+   --force-update                                            \
+   --protected-settings "{\""PATToken\"": \""$Token\""}"     \
+   --settings "{\""VSTSAccountName\"": \""$VSTSAccountName\"",\""TeamProject\"": \""$TeamProject\"",\""DeploymentGroup\"": \""$DeploymentGroup\"",\""Tags\"": \""$Tags\"",\""AgentName\"": \""$AgentName\""}"
+
+#az vm extension delete --vm-name  $myVMName  --resource-group $myResourceGroup   -n TeamServicesAgent
