@@ -1,0 +1,24 @@
+myResourceGroup=workshop-devops-agents-ACI
+rslocation=westus
+myACIName=mydevopsaci01
+#DevOps info
+VSTSAccountName=<your organization name only>
+TeamProject=<your TeamProject name>
+
+AgentName=$myACIName-$RANDOM
+Token=<your Personal Access Token >
+
+
+#RG
+az group create --name $myResourceGroup --location $rslocation
+#ACI
+az container create -g $myResourceGroup               \
+-n $myACIName                                         \
+--image mcr.microsoft.com/azure-pipelines/vsts-agent  \
+--cpu 1                                               \
+--memory 2                                            \
+--environment-variables                               \
+VSTS_ACCOUNT=$VSTSAccountName                         \
+VSTS_TOKEN=$Token                                     \
+VSTS_AGENT=$AgentName                                 \
+VSTS_POOL=Default

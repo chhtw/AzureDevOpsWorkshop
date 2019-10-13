@@ -17,7 +17,7 @@ myVnetSubprefix=192.168.1.0/24
 myNSGName=NSG-"$myResourceGroup"
 
 #DevOps info
-VSTSAccountName=https://dev.azure.com/<yourr orgniaztion>
+VSTSAccountName=https://dev.azure.com/<yourr organization name>
 TeamProject=<your TeamProject name>
 DeploymentGroup=<your DeploymentGroup name>
 AgentName=$myVMName-$RANDOM
